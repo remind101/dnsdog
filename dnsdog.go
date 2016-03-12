@@ -68,8 +68,8 @@ func (w *Watcher) HandlePacket(p gopacket.Packet) error {
 
 		for _, a := range dnsPacket.Answers {
 			w.statsd.Count("dns.answer", 1, append(tags, []string{
-				fmt.Sprintf("name:%s", string(a.Name)),
-				fmt.Sprintf("type:%s", query_type(a.Type)),
+				fmt.Sprintf("query:%s", string(a.Name)),
+				fmt.Sprintf("query_type:%s", query_type(a.Type)),
 			}...), 1)
 		}
 	} else {
@@ -81,8 +81,8 @@ func (w *Watcher) HandlePacket(p gopacket.Packet) error {
 
 		for _, q := range dnsPacket.Questions {
 			w.statsd.Count("dns.question", 1, append(tags, []string{
-				fmt.Sprintf("name:%s", string(q.Name)),
-				fmt.Sprintf("type:%s", query_type(q.Type)),
+				fmt.Sprintf("query:%s", string(q.Name)),
+				fmt.Sprintf("query_type:%s", query_type(q.Type)),
 			}...), 1)
 		}
 	}
