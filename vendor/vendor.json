@@ -1,0 +1,31 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"path": "github.com/google/gopacket",
+			"revision": "8cdd14ca4735e61d81a55f62761fc2c082d41898",
+			"revisionTime": "2016-03-06T22:35:41+01:00"
+		},
+		{
+			"path": "github.com/google/gopacket/bytediff",
+			"revision": "8cdd14ca4735e61d81a55f62761fc2c082d41898",
+			"revisionTime": "2016-03-06T22:35:41+01:00"
+		},
+		{
+			"path": "github.com/google/gopacket/layers",
+			"revision": "8cdd14ca4735e61d81a55f62761fc2c082d41898",
+			"revisionTime": "2016-03-06T22:35:41+01:00"
+		},
+		{
+			"path": "github.com/google/gopacket/pcap",
+			"revision": "8cdd14ca4735e61d81a55f62761fc2c082d41898",
+			"revisionTime": "2016-03-06T22:35:41+01:00"
+		},
+		{
+			"path": "github.com/google/gopacket/pcapgo",
+			"revision": "8cdd14ca4735e61d81a55f62761fc2c082d41898",
+			"revisionTime": "2016-03-06T22:35:41+01:00"
+		}
+	]
+}
