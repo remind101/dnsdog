@@ -38,6 +38,7 @@ func Watch(iface, addr string) error {
 	if err != nil {
 		return err
 	}
+	defer c.Close()
 
 	s := gopacket.NewPacketSource(h, h.LinkType())
 	w := &Watcher{packets: s.Packets(), statsd: c}

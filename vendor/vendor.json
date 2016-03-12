@@ -3,6 +3,11 @@
 	"ignore": "",
 	"package": [
 		{
+			"path": "github.com/DataDog/datadog-go/statsd",
+			"revision": "b050cd8f4d7c394545fd7d966c8e2909ce89d552",
+			"revisionTime": "2015-09-30T16:07:41+02:00"
+		},
+		{
 			"path": "github.com/google/gopacket",
 			"revision": "8cdd14ca4735e61d81a55f62761fc2c082d41898",
 			"revisionTime": "2016-03-06T22:35:41+01:00"
