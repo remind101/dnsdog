@@ -2,6 +2,7 @@ package dnsdog
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/google/gopacket"
@@ -57,7 +58,11 @@ func (w *Watcher) Watch() error {
 
 // HandlePacket handles a single packet.
 func (w *Watcher) HandlePacket(p gopacket.Packet) error {
-	dnsPacket := p.ApplicationLayer().(*layers.DNS)
+	dnsPacket, ok := p.ApplicationLayer().(*layers.DNS)
+	if !ok {
+		debug("packet error: %v", p)
+		return nil
+	}
 
 	if dnsPacket.QR {
 		// This is a reply
@@ -65,6 +70,13 @@ func (w *Watcher) HandlePacket(p gopacket.Packet) error {
 			fmt.Sprintf("response_code:%s", response_code(dnsPacket.ResponseCode)),
 		}
 		w.statsd.Count("dns.reply", 1, tags, 1)
+
+		for _, q := range dnsPacket.Questions {
+			w.statsd.Count("dns.reply.question", 1, append(tags, []string{
+				fmt.Sprintf("query:%s", string(q.Name)),
+				fmt.Sprintf("query_type:%s", string(q.Name)),
+			}...), 1)
+		}
 
 		for _, a := range dnsPacket.Answers {
 			w.statsd.Count("dns.answer", 1, append(tags, []string{
@@ -190,4 +202,8 @@ func op_code(t layers.DNSOpCode) string {
 		return "UNKNOWN"
 	}
 	return ""
+}
+
+func debug(format string, args ...interface{}) (int, error) {
+	return fmt.Fprintf(os.Stderr, "DEBUG: "+format, args...)
 }
