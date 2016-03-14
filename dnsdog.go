@@ -3,11 +3,13 @@ package dnsdog
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+	"github.com/patrickmn/go-cache"
 )
 
 const BPFFilter = "udp port 53"
@@ -21,6 +23,7 @@ type statsdClient interface {
 type Watcher struct {
 	packets <-chan gopacket.Packet
 	statsd  statsdClient
+	cache   *cache.Cache
 }
 
 // Watch starts watching iface and sends metrics to addr.
@@ -42,7 +45,11 @@ func Watch(iface, addr string) error {
 	defer c.Close()
 
 	s := gopacket.NewPacketSource(h, h.LinkType())
-	w := &Watcher{packets: s.Packets(), statsd: c}
+	w := &Watcher{
+		packets: s.Packets(),
+		statsd:  c,
+		cache:   cache.New(time.Second, time.Second),
+	}
 	return w.Watch()
 }
 
@@ -63,6 +70,7 @@ func (w *Watcher) HandlePacket(p gopacket.Packet) error {
 		debug("packet error: %v", p)
 		return nil
 	}
+	id := dnsPacket.ID
 
 	if dnsPacket.QR {
 		// This is a reply
@@ -70,6 +78,15 @@ func (w *Watcher) HandlePacket(p gopacket.Packet) error {
 			fmt.Sprintf("response_code:%s", response_code(dnsPacket.ResponseCode)),
 		}
 		w.statsd.Count("dns.reply", 1, tags, 1)
+
+		t, ok := w.cache.Get(fmt.Sprintf("%d", id))
+		if ok {
+			start := t.(time.Time)
+			d := float64(time.Since(start)) / float64(time.Millisecond)
+			w.statsd.Histogram("dns.reply.time", d, tags, 1)
+		} else {
+			debug("%d not in cache", id)
+		}
 
 		for _, q := range dnsPacket.Questions {
 			w.statsd.Count("dns.reply.question", 1, append(tags, []string{
@@ -85,6 +102,8 @@ func (w *Watcher) HandlePacket(p gopacket.Packet) error {
 			}...), 1)
 		}
 	} else {
+		w.cache.Set(fmt.Sprintf("%d", id), time.Now(), cache.DefaultExpiration)
+
 		// This is a query
 		tags := []string{
 			fmt.Sprintf("op_code:%s", op_code(dnsPacket.OpCode)),
@@ -205,5 +224,5 @@ func op_code(t layers.DNSOpCode) string {
 }
 
 func debug(format string, args ...interface{}) (int, error) {
-	return fmt.Fprintf(os.Stderr, "DEBUG: "+format, args...)
+	return fmt.Fprintf(os.Stderr, "DEBUG: "+format+"\n", args...)
 }

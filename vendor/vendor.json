@@ -31,6 +31,11 @@
 			"path": "github.com/google/gopacket/pcapgo",
 			"revision": "8cdd14ca4735e61d81a55f62761fc2c082d41898",
 			"revisionTime": "2016-03-06T22:35:41+01:00"
+		},
+		{
+			"path": "github.com/patrickmn/go-cache",
+			"revision": "1881a9bccb818787f68c52bfba648c6cf34c34fa",
+			"revisionTime": "2016-01-27T12:00:04-05:00"
 		}
 	]
 }
