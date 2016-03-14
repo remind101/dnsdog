@@ -38,7 +38,7 @@ func Watch(iface, addr string) error {
 		return err
 	}
 
-	c, err := statsd.NewBuffered(addr, 100)
+	c, err := statsd.New(addr)
 	if err != nil {
 		return err
 	}
