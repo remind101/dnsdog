@@ -91,7 +91,7 @@ func (w *Watcher) HandlePacket(p gopacket.Packet) error {
 		for _, q := range dnsPacket.Questions {
 			w.statsd.Count("dns.reply.question", 1, append(tags, []string{
 				fmt.Sprintf("query:%s", string(q.Name)),
-				fmt.Sprintf("query_type:%s", string(q.Name)),
+				fmt.Sprintf("query_type:%s", string(q.Type)),
 			}...), 1)
 		}
 
