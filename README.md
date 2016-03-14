@@ -20,5 +20,7 @@ DNSDog generates the following metrics and tags:
 dns.query{op_code}
 dns.question{op_code,query,query_type}
 dns.reply{response_code}
+dns.reply.question{response_code,query,query_type}
 dns.answer{response_code,query,query_type}
+dns.reply.time{response_code}
 ```
