@@ -4,12 +4,16 @@ DNSDog is a small utility for generating metrics for DNS queries and replies and
 
 ![](https://s3.amazonaws.com/ejholmes.github.com/lbLcK.png)
 
+## Installation
+
+Grab the latest release from [here](https://github.com/remind101/dnsdog/releases).
+
 ## Usage
 
 Start watching for DNS packets on `eth0` and send them to statsd:
 
 ```
-$ dnsdog -iface eth0
+$ dnsdog -iface eth0 -statsd "127.0.0.1:8125"
 ```
 
 ## Metrics
