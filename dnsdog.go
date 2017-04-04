@@ -21,13 +21,14 @@ type statsdClient interface {
 
 // Watcher captures packets and logs stats to statsd.
 type Watcher struct {
-	packets <-chan gopacket.Packet
-	statsd  statsdClient
-	cache   *cache.Cache
+	packets      <-chan gopacket.Packet
+	statsd       statsdClient
+	cache        *cache.Cache
+	includeQuery bool
 }
 
 // Watch starts watching iface and sends metrics to addr.
-func Watch(iface, addr string) error {
+func Watch(iface, addr string, includeQuery bool) error {
 	h, err := pcap.OpenLive(iface, 1600, true, pcap.BlockForever)
 	if err != nil {
 		return err
@@ -46,9 +47,10 @@ func Watch(iface, addr string) error {
 
 	s := gopacket.NewPacketSource(h, h.LinkType())
 	w := &Watcher{
-		packets: s.Packets(),
-		statsd:  c,
-		cache:   cache.New(time.Second, time.Second),
+		packets:      s.Packets(),
+		statsd:       c,
+		cache:        cache.New(time.Second, time.Second),
+		includeQuery: includeQuery,
 	}
 	return w.Watch()
 }
@@ -61,6 +63,20 @@ func (w *Watcher) Watch() error {
 	}
 
 	return nil
+}
+
+func (w *Watcher) addQueryTags(tags []string, packetName string, packetType string) []string {
+	tags = append(tags, []string{
+		fmt.Sprintf("query_type:%s", packetType),
+	}...)
+
+	if w.includeQuery {
+		tags = append(tags, []string{
+			fmt.Sprintf("query:%s", packetName),
+		}...)
+	}
+
+	return tags
 }
 
 // HandlePacket handles a single packet.
@@ -89,17 +105,11 @@ func (w *Watcher) HandlePacket(p gopacket.Packet) error {
 		}
 
 		for _, q := range dnsPacket.Questions {
-			w.statsd.Count("dns.reply.question", 1, append(tags, []string{
-				fmt.Sprintf("query:%s", string(q.Name)),
-				fmt.Sprintf("query_type:%s", string(q.Type)),
-			}...), 1)
+			w.statsd.Count("dns.reply.question", 1, w.addQueryTags(tags, string(q.Name), string(q.Type)), 1)
 		}
 
 		for _, a := range dnsPacket.Answers {
-			w.statsd.Count("dns.answer", 1, append(tags, []string{
-				fmt.Sprintf("query:%s", string(a.Name)),
-				fmt.Sprintf("query_type:%s", query_type(a.Type)),
-			}...), 1)
+			w.statsd.Count("dns.answer", 1, w.addQueryTags(tags, string(a.Name), string(a.Type)), 1)
 		}
 	} else {
 		w.cache.Set(fmt.Sprintf("%d", id), time.Now(), cache.DefaultExpiration)
@@ -111,10 +121,7 @@ func (w *Watcher) HandlePacket(p gopacket.Packet) error {
 		w.statsd.Count("dns.query", 1, tags, 1)
 
 		for _, q := range dnsPacket.Questions {
-			w.statsd.Count("dns.question", 1, append(tags, []string{
-				fmt.Sprintf("query:%s", string(q.Name)),
-				fmt.Sprintf("query_type:%s", query_type(q.Type)),
-			}...), 1)
+			w.statsd.Count("dns.question", 1, w.addQueryTags(tags, string(q.Name), string(q.Type)), 1)
 		}
 	}
 
