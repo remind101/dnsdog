@@ -65,14 +65,16 @@ func (w *Watcher) Watch() error {
 	return nil
 }
 
-func (w *Watcher) addQueryTags(tags []string, packetName string, packetType string) []string {
+func (w *Watcher) addQueryTags(tags []string, packetName []byte, packetType layers.DNSType) []string {
+	qType := query_type(packetType)
 	tags = append(tags, []string{
-		fmt.Sprintf("query_type:%s", packetType),
+		fmt.Sprintf("query_type:%s", qType),
 	}...)
 
 	if w.includeQuery {
+		query := string(packetName)
 		tags = append(tags, []string{
-			fmt.Sprintf("query:%s", packetName),
+			fmt.Sprintf("query:%s", query),
 		}...)
 	}
 
@@ -105,11 +107,11 @@ func (w *Watcher) HandlePacket(p gopacket.Packet) error {
 		}
 
 		for _, q := range dnsPacket.Questions {
-			w.statsd.Count("dns.reply.question", 1, w.addQueryTags(tags, string(q.Name), string(q.Type)), 1)
+			w.statsd.Count("dns.reply.question", 1, w.addQueryTags(tags, q.Name, q.Type), 1)
 		}
 
 		for _, a := range dnsPacket.Answers {
-			w.statsd.Count("dns.answer", 1, w.addQueryTags(tags, string(a.Name), string(a.Type)), 1)
+			w.statsd.Count("dns.answer", 1, w.addQueryTags(tags, a.Name, a.Type), 1)
 		}
 	} else {
 		w.cache.Set(fmt.Sprintf("%d", id), time.Now(), cache.DefaultExpiration)
@@ -121,7 +123,7 @@ func (w *Watcher) HandlePacket(p gopacket.Packet) error {
 		w.statsd.Count("dns.query", 1, tags, 1)
 
 		for _, q := range dnsPacket.Questions {
-			w.statsd.Count("dns.question", 1, w.addQueryTags(tags, string(q.Name), string(q.Type)), 1)
+			w.statsd.Count("dns.question", 1, w.addQueryTags(tags, q.Name, q.Type), 1)
 		}
 	}
 
